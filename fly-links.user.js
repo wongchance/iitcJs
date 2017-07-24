@@ -2,7 +2,7 @@
 // @id             fly-links@wongchance
 // @name           IITC plugin: Fly Links Fixer
 // @category       Layer
-// @version        0.2
+// @version        0.2.1
 // @updateURL      https://github.com/wongchance/iitcJs/raw/master/fly-links.user.js
 // @downloadURL    https://github.com/wongchance/iitcJs/raw/master/fly-links.user.js
 // @description    [fixer] Calculate how to link the portals to create the largest tidy set of nested fields. Enable from the layer chooser.
@@ -32,7 +32,7 @@ function wrapper(plugin_info) {
 
     //not in FlyPortals wongchance
     window.filterFlyPortalIds = [];
-    window.filterFlyMode = 'exclude';
+    window.filterFlyMode = 'include';
 
     // PLUGIN START ////////////////////////////////////////////////////////
 
