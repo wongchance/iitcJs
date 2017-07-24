@@ -2,7 +2,7 @@
 // @id             fly-links@wongchance
 // @name           IITC plugin: Fly Links Fixer
 // @category       Layer
-// @version        0.1
+// @version        0.2
 // @updateURL      https://github.com/wongchance/iitcJs/raw/master/fly-links.user.js
 // @downloadURL    https://github.com/wongchance/iitcJs/raw/master/fly-links.user.js
 // @description    [fixer] Calculate how to link the portals to create the largest tidy set of nested fields. Enable from the layer chooser.
@@ -30,9 +30,9 @@ function wrapper(plugin_info) {
     //END PLUGIN AUTHORS NOTE
 
 
-    //not in FlyPortals
-    //wongchance
+    //not in FlyPortals wongchance
     window.filterFlyPortalIds = [];
+    window.filterFlyMode = 'exclude';
 
     // PLUGIN START ////////////////////////////////////////////////////////
 
@@ -67,13 +67,25 @@ function wrapper(plugin_info) {
         var locations = [];
 
         var bounds = map.getBounds();
-        $.each(window.portals, function(guid, portal) {
-            var ll = portal.getLatLng();
-            if (bounds.contains(ll) && filterFlyPortalIds.indexOf(guid) < 0) {
-                var p = map.project(portal.getLatLng(), window.plugin.flyLinks.PROJECT_ZOOM);
-                locations.push(p);
-            }
-        });
+        if (filterFlyMode == 'exclude') {
+            $.each(window.portals, function(guid, portal) {
+                var ll = portal.getLatLng();
+                if (bounds.contains(ll) && filterFlyPortalIds.indexOf(guid) < 0) {
+                    var p = map.project(portal.getLatLng(), window.plugin.flyLinks.PROJECT_ZOOM);
+                    locations.push(p);
+                }
+
+            });
+        } else { //include mode wongchance
+            $.each(window.portals, function(guid, portal) {
+                var ll = portal.getLatLng();
+                if (bounds.contains(ll) && filterFlyPortalIds.indexOf(guid) > -1) {
+                    var p = map.project(portal.getLatLng(), window.plugin.flyLinks.PROJECT_ZOOM);
+                    locations.push(p);
+                }
+
+            });
+        }
 
         var distance = function(a, b) {
             return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
@@ -85,7 +97,7 @@ function wrapper(plugin_info) {
 
             var poly = L.polyline([alatlng, blatlng], style);
             poly.addTo(window.plugin.flyLinks.linksLayerGroup);
-        }
+        };
 
         var drawField = function(a, b, c, style) {
             var alatlng = map.unproject(a, window.plugin.flyLinks.PROJECT_ZOOM);
@@ -94,7 +106,7 @@ function wrapper(plugin_info) {
 
             var poly = L.polygon([alatlng, blatlng, clatlng], style);
             poly.addTo(window.plugin.flyLinks.fieldsLayerGroup);
-        }
+        };
 
         if (locations.length > window.plugin.flyLinks.MAX_PORTALS_TO_LINK) {
             $.each(ctrl, function(guid, ctl) { ctl.addClass('disabled').attr('title', 'Too many portals (linked/observed): ' + locations.length + '/' + Object.keys(window.portals).length); });
@@ -105,7 +117,7 @@ function wrapper(plugin_info) {
         var EPS = 1e-9;
         var det = function(a, b, c) {
             return a.x * b.y - a.y * b.x + b.x * c.y - b.y * c.x + c.x * a.y - c.y * a.x;
-        }
+        };
 
         var convexHull = function(points) {
             if (points.length < 3)
@@ -148,7 +160,7 @@ function wrapper(plugin_info) {
             func(minxi, maxxi, index);
             func(maxxi, minxi, index);
             return result;
-        }
+        };
 
         var index = convexHull(locations);
 
@@ -202,7 +214,7 @@ function wrapper(plugin_info) {
                     data[_i[0]][_i[1] - _i[0]][_i[2] - _i[1]] = { height: besth, index: besthi };
                 }
                 return data[_i[0]][_i[1] - _i[0]][_i[2] - _i[1]].height;
-            }
+            };
             var subindex = [];
             for (var i = 0; i < locations.length; ++i) {
                 subindex.push(i);
@@ -244,7 +256,7 @@ function wrapper(plugin_info) {
                     edges.push(new window.plugin.flyLinks.Edge(locations[bi], locations[data[_i[0]][_i[1] - _i[0]][_i[2] - _i[1]].index], depth));
                     edges.push(new window.plugin.flyLinks.Edge(locations[ci], locations[data[_i[0]][_i[1] - _i[0]][_i[2] - _i[1]].index], depth));
                 }
-            }
+            };
             var maketriangulation = function _maketriangulation(len, a) {
                 edges.push(new window.plugin.flyLinks.Edge(locations[index[a]], locations[index[a + len]], 0));
                 if (best[len][a].length == -1)
@@ -252,10 +264,10 @@ function wrapper(plugin_info) {
                 makesubtriangulation(index[a], index[a + best[len][a].length], index[a + len], 1);
                 _maketriangulation(best[len][a].length, a);
                 _maketriangulation(len - best[len][a].length, a + best[len][a].length);
-            }
+            };
             maketriangulation(index.length - 1, 0);
             return { edges: edges, triangles: triangles };
-        }
+        };
 
         var triangulation = triangulate(index, locations);
         var edges = triangulation.edges;
@@ -281,22 +293,20 @@ function wrapper(plugin_info) {
                 clickable: false,
             });
         });
-    }
+    };
 
-    //add checkbox
-    //wongchance
+    //add checkbox wongchance
     window.plugin.flyLinks.portalDetail = function(data) {
         var ischecked = '';
         if (filterFlyPortalIds.indexOf(data.guid) > -1) {
-            ischecked = 'checked=true'
+            ischecked = 'checked=true';
         }
 
-        $('.linkdetails').append('<aside><input id="flyId" type="checkbox" onclick="window.plugin.flyLinks.updateFilterFlyId()" ' + ischecked + ' value="' + data.guid + '">Exclude From Flys</aside>')
+        $('.linkdetails').append('<aside><input id="flyId" type="checkbox" onclick="window.plugin.flyLinks.updateFilterFlyId()" ' + ischecked +
+            ' value="' + data.guid + '">' + filterFlyMode + ' From Flys</aside>');
+    };
 
-    }
-
-    //update exclude ids
-    //wongchance
+    //update exclude/include ids wongchance
     window.plugin.flyLinks.updateFilterFlyId = function() {
         var flyId = $('#flyId').val();
         if (document.getElementById("flyId").checked) {
@@ -312,21 +322,45 @@ function wrapper(plugin_info) {
         //var flyStr=filterFlyPortalIds.join(',');
         //alert(flyStr);
 
-    }
+    };
 
 
     window.plugin.flyLinks.Edge = function(a, b, depth) {
         this.a = a;
         this.b = b;
         this.depth = depth;
-    }
+    };
 
     window.plugin.flyLinks.Triangle = function(a, b, c, depth) {
         this.a = a;
         this.b = b;
         this.c = c;
         this.depth = depth;
-    }
+    };
+
+    //wongchance resetids
+    window.plugin.flyLinks.ResetFlyids = function() {
+        filterFlyPortalIds = [];
+        dialog({
+            title: 'flyIds',
+            html: 'Succeed to reset your flyIds!'
+        });
+    };
+    //wongchance updateFlyMode(include or exclude)
+    window.plugin.flyLinks.updateFlyMode = function() {
+        if (filterFlyMode == 'exclude') {
+            filterFlyMode = 'include';
+        } else {
+            filterFlyMode = 'exclude';
+        }
+        var htmlStr = '<div>Succeed to change FlyMode!</div> ';
+        htmlStr += '<div style=“clear:both;”>----</div> ';
+        htmlStr += '<div>Now you are in "' + filterFlyMode + '" mode</div> ';
+        dialog({
+            title: 'flyMode ',
+            html: htmlStr
+        });
+    };
 
     window.plugin.flyLinks.setup = function() {
         window.plugin.flyLinks.linksLayerGroup = new L.LayerGroup();
@@ -340,14 +374,18 @@ function wrapper(plugin_info) {
             window.plugin.flyLinks.updateLayer();
         });
 
-        //addHook
-        //wongchance
+        //addHook wongchance
         window.addHook('portalDetailsUpdated', window.plugin.flyLinks.portalDetail);
+        $('#toolbox').append('<a tabindex="0" onclick="plugin.flyLinks.ResetFlyids();">Reset Fly Portals</a>');
+        $('#toolbox').append('<a tabindex="0" onclick="plugin.flyLinks.updateFlyMode();">Change Fly Mode</a>');
 
+
+        //$('#toolbox').append('<aside><input id="flymode" type="checkbox" onclick="window.plugin.flyLinks.updateFlyMode()" ' + ischecked + ' value="' + '' + '">ChangeFlyMode</aside>');
 
         window.addLayerGroup('Fly links', window.plugin.flyLinks.linksLayerGroup, false);
         window.addLayerGroup('Fly fields', window.plugin.flyLinks.fieldsLayerGroup, false);
-    }
+
+    };
     var setup = window.plugin.flyLinks.setup;
 
     // PLUGIN END //////////////////////////////////////////////////////////
