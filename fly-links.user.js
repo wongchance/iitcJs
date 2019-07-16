@@ -2,7 +2,7 @@
 // @id             fly-links@wongchance
 // @name           IITC plugin: Fly Links Fixer
 // @category       Layer
-// @version        0.2.1
+// @version        0.2.2
 // @updateURL      https://github.com/wongchance/iitcJs/raw/master/fly-links.user.js
 // @downloadURL    https://github.com/wongchance/iitcJs/raw/master/fly-links.user.js
 // @description    [fixer] Calculate how to link the portals to create the largest tidy set of nested fields. Enable from the layer chooser.
@@ -20,7 +20,7 @@
 
 function wrapper(plugin_info) {
     // ensure plugin framework is there, even if iitc is not yet loaded
-    if (typeof window.plugin !== 'function') window.plugin = function() {};
+    if (typeof window.plugin !== 'function') window.plugin = function () { };
 
     //PLUGIN AUTHORS: writing a plugin outside of the IITC build environment? if so, delete these lines!!
     //(leaving them in place might break the 'About IITC' page or break update checks)
@@ -37,7 +37,7 @@ function wrapper(plugin_info) {
     // PLUGIN START ////////////////////////////////////////////////////////
 
     // use own namespace for plugin
-    window.plugin.flyLinks = function() {};
+    window.plugin.flyLinks = function () { };
 
     // const values
     window.plugin.flyLinks.MAX_PORTALS_TO_OBSERVE = 1000;
@@ -49,7 +49,7 @@ function wrapper(plugin_info) {
     window.plugin.flyLinks.linksLayerGroup = null;
     window.plugin.flyLinks.fieldsLayerGroup = null;
 
-    window.plugin.flyLinks.updateLayer = function() {
+    window.plugin.flyLinks.updateLayer = function () {
         if (!window.map.hasLayer(window.plugin.flyLinks.linksLayerGroup) &&
             !window.map.hasLayer(window.plugin.flyLinks.fieldsLayerGroup))
             return;
@@ -57,10 +57,10 @@ function wrapper(plugin_info) {
         window.plugin.flyLinks.linksLayerGroup.clearLayers();
         window.plugin.flyLinks.fieldsLayerGroup.clearLayers();
         var ctrl = [$('.leaflet-control-layers-selector + span:contains("Fly links")').parent(),
-            $('.leaflet-control-layers-selector + span:contains("Fly fields")').parent()
+        $('.leaflet-control-layers-selector + span:contains("Fly fields")').parent()
         ];
         if (Object.keys(window.portals).length > window.plugin.flyLinks.MAX_PORTALS_TO_OBSERVE) {
-            $.each(ctrl, function(guid, ctl) { ctl.addClass('disabled').attr('title', 'Too many portals: ' + Object.keys(window.portals).length); });
+            $.each(ctrl, function (guid, ctl) { ctl.addClass('disabled').attr('title', 'Too many portals: ' + Object.keys(window.portals).length); });
             return;
         }
 
@@ -68,30 +68,38 @@ function wrapper(plugin_info) {
 
         var bounds = map.getBounds();
         if (filterFlyMode == 'exclude') {
-            $.each(window.portals, function(guid, portal) {
+            $.each(window.portals, function (guid, portal) {
                 var ll = portal.getLatLng();
                 if (bounds.contains(ll) && filterFlyPortalIds.indexOf(guid) < 0) {
                     var p = map.project(portal.getLatLng(), window.plugin.flyLinks.PROJECT_ZOOM);
                     locations.push(p);
                 }
-
             });
         } else { //include mode wongchance
-            $.each(window.portals, function(guid, portal) {
+            $.each(window.portals, function (guid, portal) {
                 var ll = portal.getLatLng();
                 if (bounds.contains(ll) && filterFlyPortalIds.indexOf(guid) > -1) {
                     var p = map.project(portal.getLatLng(), window.plugin.flyLinks.PROJECT_ZOOM);
                     locations.push(p);
                 }
-
             });
         }
 
-        var distance = function(a, b) {
+        //count portal in map
+        var mapPortalCount = 0;
+        $.each(window.portals, function (guid, portal) {
+            var ll = portal.getLatLng();
+            if (bounds.contains(ll)) {
+                mapPortalCount++;
+            }
+        });
+        $('#mapPortalCount').html(mapPortalCount + ' portals in current map');
+
+        var distance = function (a, b) {
             return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
         };
 
-        var drawLink = function(a, b, style) {
+        var drawLink = function (a, b, style) {
             var alatlng = map.unproject(a, window.plugin.flyLinks.PROJECT_ZOOM);
             var blatlng = map.unproject(b, window.plugin.flyLinks.PROJECT_ZOOM);
 
@@ -99,7 +107,7 @@ function wrapper(plugin_info) {
             poly.addTo(window.plugin.flyLinks.linksLayerGroup);
         };
 
-        var drawField = function(a, b, c, style) {
+        var drawField = function (a, b, c, style) {
             var alatlng = map.unproject(a, window.plugin.flyLinks.PROJECT_ZOOM);
             var blatlng = map.unproject(b, window.plugin.flyLinks.PROJECT_ZOOM);
             var clatlng = map.unproject(c, window.plugin.flyLinks.PROJECT_ZOOM);
@@ -109,17 +117,17 @@ function wrapper(plugin_info) {
         };
 
         if (locations.length > window.plugin.flyLinks.MAX_PORTALS_TO_LINK) {
-            $.each(ctrl, function(guid, ctl) { ctl.addClass('disabled').attr('title', 'Too many portals (linked/observed): ' + locations.length + '/' + Object.keys(window.portals).length); });
+            $.each(ctrl, function (guid, ctl) { ctl.addClass('disabled').attr('title', 'Too many portals (linked/observed): ' + locations.length + '/' + Object.keys(window.portals).length); });
             return;
         }
-        $.each(ctrl, function(guid, ctl) { ctl.removeClass('disabled').attr('title', 'portals (linked/observed): ' + locations.length + '/' + Object.keys(window.portals).length); });
+        $.each(ctrl, function (guid, ctl) { ctl.removeClass('disabled').attr('title', 'portals (linked/observed): ' + locations.length + '/' + Object.keys(window.portals).length); });
 
         var EPS = 1e-9;
-        var det = function(a, b, c) {
+        var det = function (a, b, c) {
             return a.x * b.y - a.y * b.x + b.x * c.y - b.y * c.x + c.x * a.y - c.y * a.x;
         };
 
-        var convexHull = function(points) {
+        var convexHull = function (points) {
             if (points.length < 3)
                 return [];
             var result = [];
@@ -146,7 +154,7 @@ function wrapper(plugin_info) {
                 } else {
                     result.push(ai);
                 }
-            }
+            };
             var minxi = 0;
             var maxxi = 0;
             var index = [];
@@ -164,12 +172,12 @@ function wrapper(plugin_info) {
 
         var index = convexHull(locations);
 
-        var triangulate = function(index, locations) {
+        var triangulate = function (index, locations) {
             if (index.length == 0)
                 return { edges: [], triangles: [] };
             var data = [];
             var subtriangulate = function _subtriangulate(ai, bi, ci, index) {
-                var _i = [ai, bi, ci].sort(function(a, b) { return a - b; });
+                var _i = [ai, bi, ci].sort(function (a, b) { return a - b; });
                 if (data[_i[0]] === undefined)
                     data[_i[0]] = [];
                 if (data[_i[0]][_i[1] - _i[0]] === undefined)
@@ -198,12 +206,12 @@ function wrapper(plugin_info) {
                         besthi = -1;
                     } else {
                         var besths = 0;
-                        for (var i = 0; i < _index.length; ++i) {
-                            var ch = _subtriangulate(ai, bi, _index[i], _index);
-                            var ah = _subtriangulate(bi, ci, _index[i], _index);
-                            var bh = _subtriangulate(ci, ai, _index[i], _index);
-                            var _besth = Math.min(ah, bh, ch);
-                            var _besths = ah + bh + ch;
+                        for (var j = 0; j < _index.length; ++j) {
+                            var chj = _subtriangulate(ai, bi, _index[j], _index);
+                            var ahj = _subtriangulate(bi, ci, _index[j], _index);
+                            var bhj = _subtriangulate(ci, ai, _index[j], _index);
+                            var _besth = Math.min(ahj, bhj, chj);
+                            var _besths = ahj + bhj + chj;
                             if (besth < _besth || Math.abs(besth - _besth) <= EPS && besths < _besths) {
                                 besth = _besth;
                                 besths = _besths;
@@ -227,7 +235,7 @@ function wrapper(plugin_info) {
                     var tlen = -1;
                     for (var _len = 1; _len <= len - 1; ++_len) {
                         var _t = 0;
-                        $.each([best[_len][k].height, best[len - _len][k + _len].height, subtriangulate(index[k], index[k + _len], index[k + len], subindex)], function(guid, __t) {
+                        $.each([best[_len][k].height, best[len - _len][k + _len].height, subtriangulate(index[k], index[k + _len], index[k + len], subindex)], function (guid, __t) {
                             if (__t == 0)
                                 return;
                             if (_t == 0 || _t > __t)
@@ -245,7 +253,7 @@ function wrapper(plugin_info) {
             var edges = [];
             var triangles = [];
             var makesubtriangulation = function _makesubtriangulation(ai, bi, ci, depth) {
-                var _i = [ai, bi, ci].sort(function(a, b) { return a - b; });
+                var _i = [ai, bi, ci].sort(function (a, b) { return a - b; });
                 if (data[_i[0]][_i[1] - _i[0]][_i[2] - _i[1]].index == -1) {
                     triangles.push(new window.plugin.flyLinks.Triangle(locations[ai], locations[bi], locations[ci], depth));
                 } else {
@@ -273,7 +281,7 @@ function wrapper(plugin_info) {
         var edges = triangulation.edges;
         var triangles = triangulation.triangles;
 
-        $.each(edges, function(idx, edge) {
+        $.each(edges, function (idx, edge) {
             drawLink(edge.a, edge.b, {
                 color: '#FF0000',
                 opacity: 1,
@@ -284,7 +292,7 @@ function wrapper(plugin_info) {
             });
         });
 
-        $.each(triangles, function(idx, triangle) {
+        $.each(triangles, function (idx, triangle) {
             drawField(triangle.a, triangle.b, triangle.c, {
                 stroke: false,
                 fill: true,
@@ -296,7 +304,7 @@ function wrapper(plugin_info) {
     };
 
     //add checkbox wongchance
-    window.plugin.flyLinks.portalDetail = function(data) {
+    window.plugin.flyLinks.portalDetail = function (data) {
         var ischecked = '';
         if (filterFlyPortalIds.indexOf(data.guid) > -1) {
             ischecked = 'checked=true';
@@ -307,10 +315,10 @@ function wrapper(plugin_info) {
     };
 
     //update exclude/include ids wongchance
-    window.plugin.flyLinks.updateFilterFlyId = function() {
+    window.plugin.flyLinks.updateFilterFlyId = function () {
         var flyId = $('#flyId').val();
         if (document.getElementById("flyId").checked) {
-            if (filterFlyPortalIds.indexOf(flyId) > -1) {;
+            if (filterFlyPortalIds.indexOf(flyId) > -1) {
             } else {
                 filterFlyPortalIds.push(flyId);
             }
@@ -325,13 +333,13 @@ function wrapper(plugin_info) {
     };
 
 
-    window.plugin.flyLinks.Edge = function(a, b, depth) {
+    window.plugin.flyLinks.Edge = function (a, b, depth) {
         this.a = a;
         this.b = b;
         this.depth = depth;
     };
 
-    window.plugin.flyLinks.Triangle = function(a, b, c, depth) {
+    window.plugin.flyLinks.Triangle = function (a, b, c, depth) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -339,7 +347,7 @@ function wrapper(plugin_info) {
     };
 
     //wongchance resetids
-    window.plugin.flyLinks.ResetFlyids = function() {
+    window.plugin.flyLinks.ResetFlyids = function () {
         filterFlyPortalIds = [];
         dialog({
             title: 'flyIds',
@@ -347,7 +355,7 @@ function wrapper(plugin_info) {
         });
     };
     //wongchance updateFlyMode(include or exclude)
-    window.plugin.flyLinks.updateFlyMode = function() {
+    window.plugin.flyLinks.updateFlyMode = function () {
         if (filterFlyMode == 'exclude') {
             filterFlyMode = 'include';
         } else {
@@ -362,15 +370,15 @@ function wrapper(plugin_info) {
         });
     };
 
-    window.plugin.flyLinks.setup = function() {
+    window.plugin.flyLinks.setup = function () {
         window.plugin.flyLinks.linksLayerGroup = new L.LayerGroup();
         window.plugin.flyLinks.fieldsLayerGroup = new L.LayerGroup();
 
-        window.addHook('mapDataRefreshEnd', function(e) {
+        window.addHook('mapDataRefreshEnd', function (e) {
             window.plugin.flyLinks.updateLayer();
         });
 
-        window.map.on('moveend', function() {
+        window.map.on('moveend', function () {
             window.plugin.flyLinks.updateLayer();
         });
 
@@ -378,6 +386,7 @@ function wrapper(plugin_info) {
         window.addHook('portalDetailsUpdated', window.plugin.flyLinks.portalDetail);
         $('#toolbox').append('<a tabindex="0" onclick="plugin.flyLinks.ResetFlyids();">Reset Fly Portals</a>');
         $('#toolbox').append('<a tabindex="0" onclick="plugin.flyLinks.updateFlyMode();">Change Fly Mode</a>');
+        $('#toolbox').append('<a tabindex="0" id="mapPortalCount">0 portals in current map</a>');
 
 
         //$('#toolbox').append('<aside><input id="flymode" type="checkbox" onclick="window.plugin.flyLinks.updateFlyMode()" ' + ischecked + ' value="' + '' + '">ChangeFlyMode</aside>');
